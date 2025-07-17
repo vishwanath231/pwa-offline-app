@@ -39,18 +39,15 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((res) => {
-        const resClone = res.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, resClone);
-        });
-        return res;
-      })
-      .catch(() => {
-        return caches.match(event.request).then(cached => {
-          return cached || caches.match(OFFLINE_URL);
-        });
-      })
+    caches.match(event.request).then(cached => {
+      return (
+        cached ||
+        fetch(event.request).catch(() => {
+          if (event.request.destination === 'document') {
+            return caches.match('/offline.html');
+          }
+        })
+      );
+    })
   );
 });
